@@ -15,8 +15,8 @@ def primes_under(max)
 end
 
 def ordered_word?(word)
-  for i in 0..word.size - 2
-    return false if word[i] > word[i + 1]
+  for i in 1...word.size
+    return false if word[i - 1] > word[i]
   end
   true
 end
@@ -43,41 +43,32 @@ def one_off_words(str, word_list)
     word.size.times do |i|
       count += 1 if str[i] != word[i]
     end
-    count == 1
+    word.size == other.size && count == 1
   end
 end
 
 # given two intervals described each by two numbers on a number line, find the intersect and the section of each interval with no overlap
-def overlap(range1, range2)
-  results = {
-    :range1 => no_overlap(range1, range2),
-    :range2 => no_overlap(range2, range1),
-    :both => []
-  }
+# let a range be [l, r] for [left, right]
 
-  # find intersect
-  l1, r1 = range1
-  l2, r2 = range2
-
-  if l1 < r2 && l2 < r1
-    results[:both] = [[l1, l2].max, [r1, r2].min]
-  end
-  results
+def valid?(range)
+  range[0] < range[1]
 end
 
-def no_overlap(range1, range2)
+def overlap(range1, range2)
   l1, r1 = range1
   l2, r2 = range2
-  lbr = l1 <= r2 # left before right
-  lal = l1 >= l2 # left after left
-  rbr = r1 <= r2 # right before right
-  ral = r1 >= l2 # right after left
-  return [] if lal && rbr # totally covered
-  return [[r2, r1]] if lbr && lal
-  return [[l1, l2]] if rbr && ral
-  return [[l1, l2], [r2, r1]] if !lal && !rbr # range2 in the middle of range1
+  
+  lmax = [l1, l2].max 
+  rmin = [r1, r2].min
+  
+  both = [lmax, rmin]
+  both = [] unless valid?(both)
 
-  range1 # range2 not intersecting range1
+  { 
+    :range1 => [[l1, lmax], [rmin, r1]].select { |range| valid?(range) },
+    :range2 => [[l2, lmax], [rmin, r2]].select { |range| valid?(range) },
+    :both => both
+  }
 end
 
 def fibs(max)
@@ -87,9 +78,9 @@ def fibs(max)
 end
 
 def fib(n) 
-  a, b = 1, 1 
+  a, b = 0, 1 
   n.times { a, b = b, a + b }
-  a 
+  a
 end
 
 require 'matrix'
@@ -556,7 +547,7 @@ def fizzbuzz
       i
     when 3
       "Fizz"
-    when 5      
+    when 5
       "Buzz"
     else
       "FizzBuzz"
@@ -585,3 +576,74 @@ def next_permutation(n)
 
   new_order.join.to_i
 end
+
+# time to parse some lisp
+
+# input:  string with newlines and tabs
+# output: parens around function blocks
+
+# iterate through characters in the string
+# there are several states the parser can be in
+# the token counting state, where line tokens are counted up and tabs are counted
+# the tab counting state, where tabs are being read to determine the structure of the following line
+# the ("[ state, where a stack is built up, newlines, tabs, and spaces are ignored, and only one token is being created
+# the backslash state, where the following character is ignored
+
+def parse_lisp(str)
+	# TODO: handle the tab tree and resulting token structure
+
+	depth_stack = [] # can have (, ", and [
+  current_token = nil
+  state_stack = []
+  state = "token counting"
+  tab_count = 0
+
+  str.each_char do |char|
+  	current_token << char
+  	if state == "tab counting" && char != "\t"
+  		# do stuff with tabs and structure
+  		tab_count = 0
+  	end
+  	
+  	if char == "\\"
+  		state = "backslash"
+  	else
+		  case state
+		  when "token counting"
+
+		  when "tab counting"
+
+		  when "within paren, quote, or bracket"
+
+		  	case char
+		  	when ")"
+					depth_stack.pop if depth_stack[-1] == '('
+				when "]"
+					depth_stack.pop if depth_stack[-1] == '['
+		  	when '"'
+		  		depth_stack.pop if depth_stack[-1] == '"'
+				else
+					if "([".include?(char)
+						depth_stack << char
+					else
+						
+					end
+				end
+		  when "backslash"
+		  	state = state_stack.pop
+		  end
+		end
+	end
+  	
+
+  end
+
+  puts pre_parse
+end
+
+p parse_lisp(<<-code)
+def prime? (n)
+  and
+    isnt 1 n
+    none [multiple n _] (range 2 sqrt.n)
+code

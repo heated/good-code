@@ -6,8 +6,6 @@
 
 (= product [reduce * _])
 
-(= sqr-arr [map square _])
-
 (= triangle sum:range)
 
 ; now with efficiency
@@ -19,12 +17,24 @@
 
 (= not-nil [keep id _])
 
+(def generate (num func) (map func range.num))
+
+(= generate-some [generate 20 _])
+
 (= same-count [count id (map is _a _b)])
 
+(= ignore [do _ t])
+
+(= to-list [as cons _]) 
+
+; rand-elt
 (def sample (xs) xs:rand:len.xs)
 
+(mac or= (exp val)
+  `(or ,exp (= ,exp ,val)))
+
 (def prime? (n)
-  (and (isnt 1 n) (none [multiple n _] (range 2 sqrt.n))))
+  (and (isnt n 1) (none [multiple n _] (range 2 sqrt.n))))
 
 (def delete-at (xs idx) 
   (+ (take idx xs) (drop inc.idx xs)))
@@ -35,12 +45,21 @@
 (def map-i (f xs (o n 0))
   (and xs (cons (f car.xs n) (map-i f cdr.xs inc.n))))
 
+(def mapcons (f pair)
+  (cons f:car.pair f:cdr.pair))
+
+(mac sub (exp) 
+  (if cons?.exp
+    `(cons (sub ,car.exp) (sub ,cdr.exp)) 
+    x))
+
+; dedup
 (def unique (xs)
   (with seen (table)
         result nil
     (on el xs
       (unless seen.el (push el result))
-      (= seen.el 't))
+      (= seen.el t))
     rev.result))
 
 (def factors (n)
@@ -65,7 +84,25 @@
       range0:len.word)]
     list))
 
+; given two intervals described each by two numbers on a number line, find the intersect and the section of each interval with no overlap
+; let a range be [l, r] for [left, right]
+ 
+(= valid-range? [< _.0 _.1])
+ 
+(def overlap (range1 range2)
+  (withs ((l1 r1)   range1
+          (l2 r2)   range2
+          lmax      (max l1 l2)
+          rmin      (min r1 r2)
+          both      (list lmax rmin)
+          intersect (and valid-range?.both both))
+    
+    (obj range1 (keep valid-range? (sub ((l1 lmax) (rmin r1))))
+         range2 (keep valid-range? (sub ((l2 lmax) (rmin r2))))
+         both   intersect)))
+
 ; return positions of pairs of numbers within a list that sum to zero
+; cubic time
 (def pair-zero-sum (xs)
   (let result nil
     (for i 0 dec:len.xs
@@ -73,6 +110,17 @@
         (if (zero:+ xs.i xs.j)
           (push (list i j) result))))
     result))
+
+; linear time
+; TODO: solution is not sorted
+(def pair-zero-sum (xs)
+  (with seen   (table) 
+        result nil
+    (on el xs
+      (each idx seen:-.el
+        (push (list idx index) result))
+      (push index seen.el))
+    rev.result))
 
 (def powerset (xs)
   (if empty.xs
@@ -90,18 +138,23 @@
         (permutations:delete-at xs _i)]
       xs)))
 
+; linear time
 (def swap (xs i j)
   (= temp xs.i
      xs.i xs.j
      xs.j temp))
 
-(def bubblesort (arr)
-  (repeat len.arr
-    (for i 1 dec:len.arr
-      (let j dec.i
-        (if (< arr.i arr.j)
-          (swap arr i j)))))
-  arr)
+(def bubble (xs)
+  (if single.xs
+    xs
+    (let (a b) xs 
+      (cons (min a b) (bubble:cons (max a b) cddr.xs)))))
+
+; square time
+(def bubble-sort (xs)
+  (repeat len.xs
+    (zap bubble xs))
+  xs)
 
 (def merge (l1 l2)
   (= result nil)
@@ -134,19 +187,19 @@
       'FizzBuzz))
 
 ; schema being something like '((3 "fizz") (5 "buzz"))
-(def fizzbuzz (n schema)
+; usage: (fizzbuzz 100 3 "fizz" 5 "buzz")
+(def fizzbuzz (n . schema)
   (for i 1 n
-    (prn:let 
-      xs (trues [if (multiple i _.0) _.1] schema)
-      (if xs 
-        sum.xs
-        i))))
+    (prn:let xs (trues [if (multiple i _.0) _.1] (tuples 2 schema))
+      (if xs sum.xs i))))
 
-; generate something like '((1 "1 ") (2 "2 ") (3 "3 "))
-(def factors-schema (n) (map [list _ (string _ " ")] range.n))
+; generate something like '(1 "1 " 2 "2 " 3 "3 " 4 "4 ")
+(def factors-schema (n) 
+  (mappend [list _ (string _ " ")] range.n))
 
 ; print all the factors of each number up to n
-(= all-factors [fizzbuzz _ (factors-schema _)])
+(def all-factors (n)
+  (apply fizzbuzz (cons n factors-schema.n)))
 
 (def palindrome? (xs)
   (let half (div len.xs 2)
@@ -178,8 +231,8 @@
 (def longest-occurrence (str chr)
   (with ans 0 temp 0
     (each el str
-      (if (is el chr)
-        ++.temp
+      (case el 
+        chr ++.temp
         (= ans (max ans temp)
            temp 0)))
     ans))
@@ -211,7 +264,7 @@
              misses (near-count secret guess)
 
         (prn hits " correct and " misses " close misses.")
-        (if (is hits 4) (throw)))
+        (case hits 4 (throw)))
 
       --.guesses)
 
@@ -229,7 +282,7 @@
 ; Given a set of numbers, find two distinct subsets whose sums differ by N.
 
 (def subset-difference (xs n)
-  (if zero.n 't
+  (if zero.n t
       empty.xs nil
       (let recurse [weights cdr.xs _]
         (or recurse.n
@@ -238,4 +291,22 @@
 
 (def sicp-1-3 xs (- (sum:map sqr xs) (sqr:best < xs)))
 
-(prn:sum:map [gcd 15 _] (range 3 117))
+(def memoize (func)
+  (let hash (table)
+    (fn args
+      (or= hash.args (apply func args)))))
+
+; defmemo is a builtin macro, along with memo
+(defmemo fib (n)
+  (if (< n 2) n 
+    (+ (fib:- n 1) 
+       (fib:- n 2))))
+
+; (= fib memoize.fib)
+
+; more string methods
+;   split-on
+;   join-on
+; to-l
+; string
+; int
