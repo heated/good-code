@@ -1,10 +1,4 @@
-; (l "test") to load within repl
-
-(= none no:some)
-
-(= sum [reduce + _])
-
-(= product [reduce * _])
+(l "core")
 
 (= triangle sum:range)
 
@@ -13,64 +7,12 @@
 
 (= factorial product:range)
 
-(= range0 [range 0 dec._])
-
-(= not-nil [keep id _])
-
-(def generate (num func) (map func range.num))
-
 (= generate-some [generate 20 _])
-
-(= same-count [count id (map is _a _b)])
-
-(= ignore [do _ t])
-
-(= to-list [as cons _]) 
-
-; rand-elt
-(def sample (xs) xs:rand:len.xs)
-
-(mac or= (exp val)
-  `(or ,exp (= ,exp ,val)))
-
-(def prime? (n)
-  (and (isnt n 1) (none [multiple n _] (range 2 sqrt.n))))
-
-(def delete-at (xs idx) 
-  (+ (take idx xs) (drop inc.idx xs)))
 
 (def worstn-int (n f xs)
   (bestn n [< f._a f._b] xs))
 
-(def map-i (f xs (o n 0))
-  (and xs (cons (f car.xs n) (map-i f cdr.xs inc.n))))
-
-(def mapcons (f pair)
-  (cons f:car.pair f:cdr.pair))
-
-(mac sub (exp) 
-  (if cons?.exp
-    `(cons (sub ,car.exp) (sub ,cdr.exp)) 
-    x))
-
-; dedup
-(def unique (xs)
-  (with seen (table)
-        result nil
-    (on el xs
-      (unless seen.el (push el result))
-      (= seen.el t))
-    rev.result))
-
-(def factors (n)
-  (let under-sqrt (keep [multiple n _] range:sqrt.n)
-    (unique:+ under-sqrt (rev:map [/ n _] under-sqrt))))
-
 (= prime-factors [keep prime? factors._])
-
-(def near-count (xs1 xs2)
-  (- (sum:map [min (count _ xs1) (count _ xs2)] unique.xs1)
-     (same-count xs1 xs2)))
 
 (def fibs (n)
   (let arr '(1 1)
@@ -79,20 +21,25 @@
 
 (def one-off-words (word list)
   (keep [is 1 
-    (len:keep 
+    (count
       [isnt _b._a word._a] 
       range0:len.word)]
     list))
 
+(def unique (xs)
+  (with seen (table)
+        result nil
+    (on el xs
+      (unless seen.el (push el result))
+      set:seen.el)
+    rev.result))
+
 ; given two intervals described each by two numbers on a number line, find the intersect and the section of each interval with no overlap
-; let a range be [l, r] for [left, right]
- 
+; let a range be [l, r] for [left, right] 
 (= valid-range? [< _.0 _.1])
- 
-(def overlap (range1 range2)
-  (withs ((l1 r1)   range1
-          (l2 r2)   range2
-          lmax      (max l1 l2)
+
+(def overlap ((l1 r1) (l2 r2))
+  (withs (lmax      (max l1 l2)
           rmin      (min r1 r2)
           both      (list lmax rmin)
           intersect (and valid-range?.both both))
@@ -102,32 +49,29 @@
          both   intersect)))
 
 ; return positions of pairs of numbers within a list that sum to zero
-; cubic time
+; cubic time, but not for vectors
 (def pair-zero-sum (xs)
-  (let result nil
-    (for i 0 dec:len.xs
+  (accum add
+    (each-index xs i
       (for j inc.i dec:len.xs
         (if (zero:+ xs.i xs.j)
-          (push (list i j) result))))
-    result))
+          (add:list i j))))))
 
 ; linear time
 ; TODO: solution is not sorted
 (def pair-zero-sum (xs)
-  (with seen   (table) 
-        result nil
-    (on el xs
-      (each idx seen:-.el
-        (push (list idx index) result))
-      (push index seen.el))
-    rev.result))
+  (let seen (table)
+    (accum add
+      (on el xs
+        (each idx seen:-.el
+          (add:list idx index))
+        (push index seen.el)))))
 
-(def powerset (xs)
-  (if empty.xs
-    '(())
-    (with el car.xs
-          set powerset:cdr.xs
-      (+ set (map [cons el _] set)))))
+(def powerset ((x . xs))
+  (if x
+    (let set powerset.xs
+      (+ set (map [cons x _] set)))
+    '(())))
 
 (def permutations (xs)
   (if empty.xs
@@ -138,45 +82,35 @@
         (permutations:delete-at xs _i)]
       xs)))
 
-; linear time
-(def swap (xs i j)
-  (= temp xs.i
-     xs.i xs.j
-     xs.j temp))
-
 (def bubble (xs)
   (if single.xs
     xs
     (let (a b) xs 
       (cons (min a b) (bubble:cons (max a b) cddr.xs)))))
 
-; square time
 (def bubble-sort (xs)
   (repeat len.xs
     (zap bubble xs))
   xs)
 
 (def merge (l1 l2)
-  (= result nil)
-  (while (and l1 l2)
-    (push
-      (if (< l1.0 l2.0) pop.l1 pop.l2)
-      result))
-  (+ rev.result l1 l2))
+  (+ (accum add
+       (while (and l1 l2)
+         (add:if (< l1.0 l2.0) pop.l1 pop.l2)))
+     l1 l2))
 
-(def merge-sort (list)
-  (let half (div len.list 2)
-    (if 
-      zero.half list
-      (merge
-        (merge-sort:take half list)
-        (merge-sort:drop half list)))))
+(def merge-sort (xs)
+  (let half (div len.xs 2)
+    (if zero.half 
+      xs
+      (merge (merge-sort:take half xs)
+             (merge-sort:drop half xs)))))
 
 (def substr (str sub)
   (catch:for i 0 (- len.str len.sub)
     (point break
       (on chr sub
-        (if (isnt (str:+ i index) chr) break.1))
+        (if (isnt (str:+ i index) chr) (break)))
       throw.i)))
 
 (for n 1 100
@@ -186,7 +120,6 @@
     5 'Buzz
       'FizzBuzz))
 
-; schema being something like '((3 "fizz") (5 "buzz"))
 ; usage: (fizzbuzz 100 3 "fizz" 5 "buzz")
 (def fizzbuzz (n . schema)
   (for i 1 n
@@ -229,72 +162,41 @@
           (prn i " " last))))))
 
 (def longest-occurrence (str chr)
-  (with ans 0 temp 0
+  (with ans  0 
+        temp 0
     (each el str
-      (case el 
-        chr ++.temp
+      (if (is el chr)
+        ++.temp
         (= ans (max ans temp)
            temp 0)))
     ans))
 
 (def shuffle (xs)
-  (with v ($.list->vector ($.ac-denil xs))
+  (with v to-vec.xs
         u len.xs
-    (for i 0 dec.u
+    (times i u
       (swapv v i (rand i dec.u)))
-    ($.vector->list v)))
-
-(def mastermind ()
-  (withs colors     '(r o y g b v)
-         rand-color [sample colors]
-         gen-guess  [map rand-color range.4]
-         secret     (gen-guess)
-         guesses    10
-
-    (readline)
-    (prn "Welcome to Mastermind. You have " guesses " guesses to diffuse the bomb.")
-    (prn "The available colors are " colors)
-    (prn "Example guess: \"r o y r\"")
-
-    (catch:until zero.guesses
-      (prn guesses " guesses left.")
-
-      (withs guess  (map sym (tokens:readline))
-             hits   (same-count secret guess)
-             misses (near-count secret guess)
-
-        (prn hits " correct and " misses " close misses.")
-        (case hits 4 (throw)))
-
-      --.guesses)
-
-    (prn:if zero.guesses
-      "I'm sorry. You died in the blast."
-      "Congratulations, that's correct!")))
+    to-list.v))
 
 (def print-depths (tree)
-  (with row list.tree
-        unwrap [reduce append _]
+  (let row list.tree
     (until empty.row
       (prn:map car row)
-      (= row (not-nil:unwrap:map [list cadr._ caddr._] row)))))
+      (= row (not-nil:mappend [list cadr._ caddr._] row)))))
 
 ; Given a set of numbers, find two distinct subsets whose sums differ by N.
-
-(def subset-difference (xs n)
+(def subset-difference ((x . xs) n)
   (if zero.n t
-      empty.xs nil
-      (let recurse [weights cdr.xs _]
-        (or recurse.n
-            (recurse:- n car.xs)
-            (recurse:+ n car.xs)))))
+      empty.x nil
+      (some [subset-difference xs (+ n _)]
+        (list 0 x -.x))))
 
 (def sicp-1-3 xs (- (sum:map sqr xs) (sqr:best < xs)))
 
-(def memoize (func)
+(def memoize (f)
   (let hash (table)
     (fn args
-      (or= hash.args (apply func args)))))
+      (or= hash.args (apply f args)))))
 
 ; defmemo is a builtin macro, along with memo
 (defmemo fib (n)
@@ -304,9 +206,127 @@
 
 ; (= fib memoize.fib)
 
-; more string methods
-;   split-on
-;   join-on
-; to-l
-; string
-; int
+(def fib (n)
+  (ref (mat-expt '((0 1) (1 1)) n) 0 1))
+
+(def cyclic? (xs)
+  (catch:with slow xs
+              fast xs
+    (while fast
+      (zap cddr fast)
+      (zap cdr slow)
+      (if (is slow fast) throw.t))))
+
+(def cycle (xs)
+  (scdr last-pair.xs xs)
+  t)
+
+(defmemo ack (a b)
+  (if (< a 2)  (+ a b 1)
+      (is a 2) (+ (* b 2) 3)
+      zero.b   (ack dec.a 1)
+      (ack dec.a (ack a dec.b))))
+
+(def levenshtein (str1 str2)
+  (withs l1  len.str1
+         row range0:inc.l1
+
+    (on char str2
+      (let next list.index
+        (times i l1
+          (push
+            (inc:min
+              (- pop.row (if (is char str1.i) 1 0))
+              car.next
+              car.row)
+            next))
+        (= row nrev.next)))
+    row.l1))
+
+(def matching-parens? (str)
+  (catch:let paren-count 0
+    (each char str
+      (++ paren-count (case char #\( 1 #\) -1 0))
+      (if (< paren-count 0) throw.nil))
+    zero.paren-count))
+
+(def partial (f . args)
+  (fn rest-args
+    (apply f (+ args rest-args))))
+
+; ; substr
+; (def split-str (str (o match " "))
+;   (accum push
+;     (let idx (substr match str)
+;       (while idx
+;
+;         (= idx (substr match str))))))
+
+
+; the graph is a list of nodes and their connections
+; (= a '(b c d))
+; (= b '(c d))
+; (= c '(d))
+; (= d '())
+;
+; (= edges cdr)
+; (= value car)
+;
+; (def map-nodes (f graph)
+;   (map f:value graph))
+;
+; (def map-dir-edges (f graph)
+;   (each node graph
+;     (each edge edges.node
+;       f.edge)))
+;
+; (def map-edges (f graph)
+;   (let seen (table)
+;     (each node graph
+;       (each edge node
+;         (unless seen.edge)))))
+
+
+; (def ufind (x) 
+;   (if (is x uf.x) 
+;     x 
+;     (= uf.x ufind:uf.x)))
+;
+; (def mix (x y) (= uf:ufind.x ufind.y))
+
+
+; (def curry (f num . args)
+;   (-- num len.args)
+;   (let curry-fn (fn new-args
+;                   (++ args new-args)
+;                   (-- num len.new-args)
+;                     (if (<= num 0)
+;                       (apply f args)
+;                       curry-fn))
+;     curry-fn))
+
+
+; ; ideally, allow the creation of functions in the following manner:
+; (def-w/obj foo (a b c (d 1 e 2))
+;   (+ a b c d e))
+;
+; ; which is called in the following manner:
+; (foo a 2 b 3 c 4)
+;
+; ; it would be nice to have errors on unsatisfied variables and optional stuff have values
+; (foo a 2) ; errors with "expected arguments b, c"
+;
+; (foo f 4) ; errors with "unexpected f; expected arguments b, c"
+;
+; ; it seems like a good idea to return macros that take their inputs, look for unnacceptable arguments, and use with to replace arguments and do a thing
+;
+; (def foo args
+;   (with args (apply table args)
+;     ))
+;
+; (mac defwithobj (name args . body)
+;   `(mac ,name args
+;     `(with ,@args ,,@body)))
+;
+; (mac foo args
+;   `(with ,@args ))
