@@ -9,7 +9,17 @@
 
 (l "core")
 
-(= interpret sym-map:new-name-map:normalize:static-name-resolve:parse)
+; functions look like (λ var exp)
+(def λ? (exp)
+  (and cons?.exp (is car.exp 'λ)))
+
+(def λ-map (f λ)
+  (list 'λ arg.λ f:body.λ))
+
+(= arg         cadr
+   body        caddr
+   deep-to-sym [deep-map sym _]
+   interpret   deep-to-sym:name-map:normalize:static-name-resolve:parse)
 
 ; returns tokens in a lisp-like structure
 ; given  "(((λ x. (λ y. y)) (λ a. a)) (λ b. b))"
@@ -34,103 +44,84 @@
         (push sym.token current-list)))
     car.current-list))
 
-; functions look like (λ var exp)
-(def function? (exp)
-  (and cons?.exp (is car.exp 'λ)))
-
-(def fn-map (f func)
-  (list 'λ arg.func f:body.func))
-
-(= arg cadr)
-
-(= body caddr)
-
-(mac defcase (name args atom fun tuple)
+(mac defλcase (name args atom func tuple)
   (let exp car.args
     `(def ,name ,args
        (case (type ,exp)
-        cons (if (function? ,exp) ,fun ,tuple)
+        cons (if (λ? ,exp) ,func ,tuple)
         ,atom))))
 
-;   DEPRECATED VIA (λb.((λa.(λb.a)) b))
-; UNDEPRECATED VIA STATIC NAME RESOLUTION
-; 
 ; go through the tree with a set of bound variables
 ; all encountered variables that are unbound become strings
 ; pass the hash through stuff recursively
 ; bind when going into a function
 ; unbind when jumping out of a function
 ; ignore inner function declarations that are the same
-
+;
 ; unbinding is the hardest - how do you know when you "come back out" of a branch?
-; solution 1: recursive, with unbinds after function calls - CERTIFIED COOLEST SHIT
-; solution 2: recursive, with copies of the bindings
+; solution: recursive, with unbinds after function calls
+
 ; base cases
 ; a -> a | "a"
 ; (λ ...) -> complicated shit
 ; (l r) -> go into each and cons
-(= names (table))
+(let names (table)
 
-(with bound (table)
-      count 0
-  (defcase bind-vars (exp)
-    (or car:bound.exp string.exp)
-    (let var arg.exp
-      ; setup new binding
-      (= names.count string.var)
-      (push count bound.var)
-      ++.count
+  (let index 0
+    (defλcase snr (exp (o bound (table)))
+      (or car:bound.exp string.exp)
 
-      ; recurse with var bound and then unbind
-      (let result (list 'λ dec.count bind-vars:body.exp)
-        pop:bound.var
-        result))
-    (map bind-vars exp))
+      (let var arg.exp
+        ; setup new binding
+        (= names.index string.var)
+        (push index bound.var)
+        ++.index
+        ; recurse with var bound and then unbind
+        (let result (list 'λ dec.index (snr body.exp bound))
+          pop:bound.var
+          result))
 
-  (def static-name-resolve (exp)
-    (= names (table)
-       count 0)
-    bind-vars.exp))
+      (map [snr _ bound index] exp))
 
-; and now for remapping to names
-; given  '(λ 1 (λ 3  (1 (1 (1 (1 (1 (1 (1 (1 3 ))))))))))
-; return '(λ b (λ b0 (b (b (b (b (b (b (b (b b0))))))))))
-(let count (table)
-  (defcase name-map (exp)
+    (def static-name-resolve (exp)
+      (= index 0)
+      snr.exp))
+
+  ; and now for remapping to names
+  ; given  '(λ 1 (λ 3  (1 (1 (1 (1 (1 (1 (1 (1 3 ))))))))))
+  ; return '(λ b (λ b0 (b (b (b (b (b (b (b (b b0))))))))))
+  (defλcase name-map (exp (o depth (table)))
     names.exp
+
     (withs index arg.exp
            var   names.index
-      (++ names.index count.var)
-      (or= count.var -1)
-      ++:count.var
-      
-      (let result (list 'λ names.index name-map:body.exp)
-        --:count.var
+      (++ names.index depth.var)
+      (or= depth.var -1)
+      ++:depth.var
+      (let result (list 'λ names.index (name-map body.exp depth))
+        --:depth.var
         result))
-    (map name-map exp))
 
-  (def new-name-map (exp)
-    (= count (table))
-    name-map.exp))
-
-(= sym-map [deep-map sym _])
+    (map [name-map _ depth] exp)))
 
 ; base cases
 ; a -> a
 ; (λ var. body) -> (λ var. norm-body)
 ; ((λ) r) -> expand λ with r -> normalize
 ; (l r) -> (l.norm r) 
-(defcase normalize (exp)
+(defλcase normalize (exp)
   exp
-  (fn-map normalize exp)
+
+  (λ-map normalize exp)
+
   (with left  normalize:car.exp
         right          cadr.exp
-    (if function?.left
+    (if λ?.left
       (normalize:expand-fn left right)
       (list left normalize.right))))
 
-(def expand-fn (f exp)
-  (expand body.f arg.f exp))
+(def expand-fn (λ exp)
+  (expand body.λ arg.λ exp))
 
 ; instead of deep-map, create a recursive function which travels through an expression replacing things inside the body, but not replacing within a function that has the same var
 ; base cases
@@ -138,11 +129,11 @@
 ; (λ x body) -> (λ x (expand body))
 ; (l r) -> expand both
 ; is there a clean way of passing references to a function so that it doesn't need to call itself with the same references over and over again?
-(defcase expand (exp token input)
+(defλcase expand (exp token input)
   (if (is exp token) input exp)
-  (if (isnt arg.exp token)
-    (fn-map [expand _ token input] exp)
-    exp)
+
+  (λ-map [expand _ token input] exp)
+
   (map [expand _ token input] exp))
 
 (def assert args
