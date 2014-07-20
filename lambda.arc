@@ -2,10 +2,8 @@
 ; (λx.xx)(λx.xx)
 ; λx.xxx
 ; (λab.a(a(ab)))(λab.a(ab))
-; abc -> (abc)
 
-; (interpret "((λa(λb(a(a(ab))))) (λc(λd(c(cd)))))")
-; λbd.b(b(b(b(b(b(b(bd)))))))
+; (interpret "((λa.(λb.(a(a(ab))))) (λc.(λd.(c(cd)))))")
 
 (l "core")
 
@@ -47,6 +45,7 @@
 (mac defλcase (name args atom func tuple)
   (let exp car.args
     `(def ,name ,args
+       ; (prn ,exp)
        (case (type ,exp)
         cons (if (λ? ,exp) ,func ,tuple)
         ,atom))))
@@ -108,17 +107,18 @@
 ; a -> a
 ; (λ var. body) -> (λ var. norm-body)
 ; ((λ) r) -> expand λ with r -> normalize
-; (l r) -> (l.norm r) 
+; (l r) -> (l.norm r) - apply the first element to the second, continue
 (defλcase normalize (exp)
   exp
 
   (λ-map normalize exp)
 
-  (with left  normalize:car.exp
-        right          cadr.exp
-    (if λ?.left
-      (normalize:expand-fn left right)
-      (list left normalize.right))))
+  (let left normalize:car.exp
+    (if single.exp
+      left
+      (if λ?.left
+        (normalize:cons (expand-fn left cadr.exp) cddr.exp)
+        (cons left (map normalize cdr.exp))))))
 
 (def expand-fn (λ exp)
   (expand body.λ arg.λ exp))
