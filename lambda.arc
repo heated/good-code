@@ -12,19 +12,19 @@
   (and cons?.exp (is car.exp 'λ)))
 
 (def λ-map (f λ)
-  (list 'λ arg.λ f:body.λ))
+  ; (list 'λ arg.λ f:body.λ))
+  (append (take 2 λ) (f:drop 2 λ)))
 
 (= arg         cadr
-   body        caddr
+   body        cddr
    deep-to-sym [deep-map sym _]
-   interpret   deep-to-sym:name-map:normalize:static-name-resolve:parse)
+   interpret   prettify-λ:deep-to-sym:name-map:normalize:static-name-resolve:parse)
 
 ; returns tokens in a lisp-like structure
 ; given  "(((λ x. (λ y. y)) (λ a. a)) (λ b. b))"
 ; return '(((λ x (λ y y)) (λ a a)) (λ b b))
 (def parse (str)
-  (abstract-syntax-tree:tokens:subst "" "." 
-    (string:intersperse " " to-list.str)))
+  (abstract-syntax-tree:tokens:multisubst '(("(" " ( ") (")" " ) ") ("." " ") ("λ" " λ ")) str))
 
 ; given  ("(" "λ" "x" "x" ")")
 ; return '(λ x x)
@@ -40,12 +40,12 @@
               (push rev.current-list parent)
               (= current-list parent))
         (push sym.token current-list)))
-    car.current-list))
+    rev.current-list))
 
 (mac defλcase (name args atom func tuple)
   (let exp car.args
     `(def ,name ,args
-       ; (prn ,exp)
+       (prn ,exp)
        (case (type ,exp)
         cons (if (λ? ,exp) ,func ,tuple)
         ,atom))))
@@ -76,7 +76,7 @@
         (push index bound.var)
         ++.index
         ; recurse with var bound and then unbind
-        (let result (list 'λ dec.index (snr body.exp bound))
+        (let result (append `(λ ,dec.index) (snr body.exp bound))
           pop:bound.var
           result))
 
@@ -97,7 +97,7 @@
       (++ names.index depth.var)
       (or= depth.var -1)
       ++:depth.var
-      (let result (list 'λ names.index (name-map body.exp depth))
+      (let result (append `(λ ,names.index) (name-map body.exp depth))
         --:depth.var
         result))
 
@@ -117,10 +117,10 @@
     (if single.exp
       left
       (if λ?.left
-        (normalize:cons (expand-fn left cadr.exp) cddr.exp)
+        (normalize:cons (expand-λ left cadr.exp) cddr.exp)
         (cons left (map normalize cdr.exp))))))
 
-(def expand-fn (λ exp)
+(def expand-λ (λ exp)
   (expand body.λ arg.λ exp))
 
 ; instead of deep-map, create a recursive function which travels through an expression replacing things inside the body, but not replacing within a function that has the same var
@@ -136,6 +136,16 @@
 
   (map [expand _ token input] exp))
 
+; turn exp into string
+; put periods between functions
+(def prettify-λ (exp)
+  ; string.exp
+
+  ; (string "λ" arg.exp "." prettify-λ:body.exp)
+
+  ; (+ "(" (sum:map prettify-λ exp) ")"))
+  exp)
+
 (def assert args
   (map [apply iso _] (tuples 2 args)))
 
@@ -145,10 +155,8 @@
 
 (def run-tests ()
   (assert                               (normalize 'a)   'a
-                                       (normalize λid)   λid
-                                   (expand-fn λid λid)   λid
-                                   (interpret "(λxx)")   λid
-                          (expand-fn λid '(λ y (y y)))   '(λ y (y y))
-                 (interpret "(λ b ((λ a (λ b a)) b))")   '(λ b (λ b0 b))
-    (interpret "((λa(λb(a(a(ab))))) (λc(λd(c(cd)))))")   eight
-    (interpret "((λa(λb(a(a(ab))))) (λa(λb(a(ab)))))")   eight2))
+                                       (normalize λid)   '(λ x . x)
+                                    (interpret "λx.x")   '(λ x . x)
+                          (interpret "λb.(λa.λb.a) b")   '(λ b λ b0 . b)
+        (interpret "(λa.λb.a(a(a b))) (λc.λd.c(c d))")   eight
+        (interpret "(λa.λb.a(a(a b))) (λa.λb.a(a b))")   eight2))
