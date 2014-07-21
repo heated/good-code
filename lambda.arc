@@ -3,42 +3,47 @@
 ; λx.xxx
 ; (λab.a(a(ab)))(λab.a(ab))
 
-; (interpret "((λa.(λb.(a(a(ab))))) (λc.(λd.(c(cd)))))")
+; (interpret "(λa.λb.a(a(a b))) (λc.λd.c(c d))")
 
 (l "core")
 
-; functions look like (λ var exp)
+(= arg       cadr
+   body      cddr
+   names     (table)
+   interpret prettify-λ:name-map:normalize:static-name-resolve:parse)
+
+; functions look like (λ arg . body)
 (def λ? (exp)
   (and cons?.exp (is car.exp 'λ)))
 
-(def λ-map (f λ)
-  (append (take 2 λ) (f:drop 2 λ)))
+(def new-λ (arg body)
+  (append `(λ ,arg) body))
 
-(= arg       cadr
-   body      cddr
-   interpret prettify-λ:name-map:normalize:static-name-resolve:parse)
+(def λ-map (f λ)
+  (new-λ arg.λ f:body.λ))
 
 ; returns tokens in a lisp-like structure
 ; given  "(λx.λy.y) (λa.a) (λb.b)"
 ; return '((λ x λ y y) (λ a a)) (λ b b))
 (def parse (str)
-  (abstract-syntax-tree:tokens:multisubst '(("(" " ( ") (")" " ) ") ("." " ") ("λ" " λ ")) str))
+  (read:+ "(" (multisubst '(("." " ") ("λ" "λ ")) str) ")"))
 
 ; given  ("(" "λ" "x" "x" ")")
 ; return '(λ x x)
-(def abstract-syntax-tree (tokens)
-  (with stack        '()
-        current-list '()
-    (each token tokens
-      (case token
-        "(" (do 
-              (push current-list stack)
-              (= current-list '()))
-        ")" (let parent pop.stack
-              (push rev.current-list parent)
-              (= current-list parent))
-        (push sym.token current-list)))
-    rev.current-list))
+; (def abstract-syntax-tree (tokens)
+;   (with stack        '()
+;         current-list '()
+;     (each token tokens
+;       (case token
+;         "(" (do 
+;               (push current-list stack)
+;               (= current-list '()))
+;         ")" (let parent pop.stack
+;               (push rev.current-list parent)
+;               (= current-list parent))
+;         (push sym.token current-list)))
+;     rev.current-list))
+
 
 ; go through the tree with a set of bound variables
 ; all encountered variables that are unbound become strings
@@ -54,8 +59,6 @@
 ; a -> a | "a"
 ; (λ ...) -> complicated shit
 ; (l r) -> go into each and cons
-(= names (table))
-
 (let index 0
   (def snr (exp (o bound (table)))
     (if atom.exp  (or car:bound.exp string.exp)
@@ -66,7 +69,7 @@
           (push index bound.var)
           ++.index
 
-          (let result (append `(λ ,dec.index) (snr body.exp bound))
+          (let result (new-λ dec.index (snr body.exp bound))
             pop:bound.var
             result))))
 
@@ -86,7 +89,7 @@
         (= names.index (symb var depth.var))
         (or= depth.var -1)
         ++:depth.var
-        (let result (append `(λ ,names.index) (name-map body.exp depth))
+        (let result (new-λ names.index (name-map body.exp depth))
           --:depth.var
           result))))
 
@@ -112,7 +115,6 @@
 ; a -> <expanded> || a
 ; (λ x body) -> (λ x (expand body))
 ; (l r) -> expand both
-; is there a clean way of passing references to a function so that it doesn't need to call itself with the same references over and over again?
 (def expand (exp token input)
   (if atom.exp (if (is exp token) input exp)
       λ?.exp   (λ-map [expand _ token input] exp)
@@ -131,14 +133,10 @@
 (def assert args
   (map [apply iso _] (tuples 2 args)))
 
-(= λid     '(λ x x)
-   eight   '(λ b (λ d  (b (b (b (b (b (b (b (b d ))))))))))
-   eight2  '(λ b (λ b0 (b (b (b (b (b (b (b (b b0)))))))))))
-
 (def run-tests ()
   (assert                               (normalize 'a)   'a
-                                       (normalize λid)   '(λ x . x)
+                                (normalize '(λ x . x))   '(λ x . x)
                                     (interpret "λx.x")   '(λ x . x)
                           (interpret "λb.(λa.λb.a) b")   '(λ b λ b0 . b)
-        (interpret "(λa.λb.a(a(a b))) (λc.λd.c(c d))")   eight
-        (interpret "(λa.λb.a(a(a b))) (λa.λb.a(a b))")   eight2))
+        (interpret "(λa.λb.a(a(a b))) (λc.λd.c(c d))")   '(λ b λ d  b (b (b (b (b (b (b (b d ))))))))
+        (interpret "(λa.λb.a(a(a b))) (λa.λb.a(a b))")   '(λ b λ b0 b (b (b (b (b (b (b (b b0))))))))))
