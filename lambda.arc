@@ -59,23 +59,22 @@
 ; a -> a | "a"
 ; (λ ...) -> complicated shit
 ; (l r) -> go into each and cons
-(let index 0
-  (def snr (exp (o bound (table)))
-    (if atom.exp  (or car:bound.exp string.exp)
-        no:λ?.exp (map [snr _ bound index] exp)
-      
-        (let var arg.exp
-          (= names.index var)
-          (push index bound.var)
-          ++.index
+(def snr (exp (o bound (table)))
+  (if atom.exp  (or car:bound.exp string.exp)
+      no:λ?.exp (map [snr _ bound] exp)
+    
+      (with var   arg.exp
+            index len.names
+        (= names.index var)
+        (push index bound.var)
 
-          (let result (new-λ dec.index (snr body.exp bound))
-            pop:bound.var
-            result))))
+        (before-returning 
+          (new-λ index (snr body.exp bound))
+          pop:bound.var))))
 
-  (def static-name-resolve (exp)
-    (= index 0)
-    snr.exp))
+(def static-name-resolve (exp)
+  (= names (table))
+  snr.exp)
 
 ; and now for remapping to names
 ; given  '(λ 1 (λ 3  (1 (1 (1 (1 (1 (1 (1 (1 3 ))))))))))
@@ -89,9 +88,9 @@
         (= names.index (symb var depth.var))
         (or= depth.var -1)
         ++:depth.var
-        (let result (new-λ names.index (name-map body.exp depth))
-          --:depth.var
-          result))))
+        (before-returning 
+          (new-λ names.index (name-map body.exp depth))
+          --:depth.var))))
 
 ; base cases
 ; a -> a

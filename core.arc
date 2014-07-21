@@ -48,6 +48,11 @@
     `(cons (sub ,car.exp) (sub ,cdr.exp)) 
     exp))
 
+(mac before-returning (x . xs)
+  `(let return-value ,x
+     ,@xs
+     return-value))
+
 (def map-i (f xs (o n 0))
   (if xs 
     (cons (f car.xs n) 
