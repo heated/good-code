@@ -1,15 +1,14 @@
 ; endgame: interpret this correctly
-; (λx.xx)(λx.xx)
-; λx.xxx
-; (λab.a(a(ab)))(λab.a(ab))
+; (λab.a(a(a b)))(λab.a(a b))
 
-; (interpret "(λa.λb.a(a(a b))) (λc.λd.c(c d))")
+; (repl)
 
 (l "core")
 
 (= arg       cadr
    body      cddr
    names     (table)
+   ellipsize [+ "(" _ ")"]
    interpret prettify-λ:name-map:normalize:static-name-resolve:parse)
 
 ; functions look like (λ arg . body)
@@ -26,24 +25,7 @@
 ; given  "(λx.λy.y) (λa.a) (λb.b)"
 ; return '((λ x λ y y) (λ a a)) (λ b b))
 (def parse (str)
-  (read:+ "(" (multisubst '(("." " ") ("λ" "λ ")) str) ")"))
-
-; given  ("(" "λ" "x" "x" ")")
-; return '(λ x x)
-; (def abstract-syntax-tree (tokens)
-;   (with stack        '()
-;         current-list '()
-;     (each token tokens
-;       (case token
-;         "(" (do 
-;               (push current-list stack)
-;               (= current-list '()))
-;         ")" (let parent pop.stack
-;               (push rev.current-list parent)
-;               (= current-list parent))
-;         (push sym.token current-list)))
-;     rev.current-list))
-
+  (read:ellipsize:multisubst '(("." " ") ("λ" "λ ")) str))
 
 ; go through the tree with a set of bound variables
 ; all encountered variables that are unbound become strings
@@ -55,7 +37,6 @@
 ; unbinding is the hardest - how do you know when you "come back out" of a branch?
 ; solution: recursive, with unbinds after function calls
 
-; base cases
 ; a -> a | "a"
 ; (λ ...) -> complicated shit
 ; (l r) -> go into each and cons
@@ -92,7 +73,6 @@
           (new-λ names.index (name-map body.exp depth))
           --:depth.var))))
 
-; base cases
 ; a -> a
 ; (λ var. body) -> (λ var. norm-body)
 ; ((λ) r) -> expand λ with r -> normalize
@@ -106,11 +86,7 @@
             λ?.left    (normalize:cons (expand-λ left cadr.exp) cddr.exp)
                        (cons left (map normalize cdr.exp))))))
 
-(def expand-λ (λ exp)
-  (expand body.λ arg.λ exp))
-
 ; instead of deep-map, create a recursive function which travels through an expression replacing things inside the body, but not replacing within a function that has the same var
-; base cases
 ; a -> <expanded> || a
 ; (λ x body) -> (λ x (expand body))
 ; (l r) -> expand both
@@ -119,15 +95,25 @@
       λ?.exp   (λ-map [expand _ token input] exp)
                (map [expand _ token input] exp)))
 
+(def expand-λ (λ exp)
+  (expand body.λ arg.λ exp))
+
 ; turn exp into string
 ; put periods between functions
+; a -> "a"
+; (λ x x) -> "λx.x"
+; (λ x x x) -> "λx.x x"
+; (a b) -> "(a b)"
 (def prettify-λ (exp)
-  ; string.exp
+  (if atom.exp string.exp
+      λ?.exp   (string "λ" arg.exp "." (if atom:body.exp body.exp prettify-list:body.exp))
+      ellipsize:prettify-list.exp))
 
-  ; (string "λ" arg.exp "." prettify-λ:body.exp)
+(def prettify-list (exp)
+  (if λ?.exp
+    prettify-λ.exp
+    (sum:intersperse " " (map prettify-λ exp))))
 
-  ; (+ "(" (sum:map prettify-λ exp) ")"))
-  exp)
 
 (def assert args
   (map [apply iso _] (tuples 2 args)))
@@ -135,7 +121,13 @@
 (def run-tests ()
   (assert                               (normalize 'a)   'a
                                 (normalize '(λ x . x))   '(λ x . x)
-                                    (interpret "λx.x")   '(λ x . x)
-                          (interpret "λb.(λa.λb.a) b")   '(λ b λ b0 . b)
-        (interpret "(λa.λb.a(a(a b))) (λc.λd.c(c d))")   '(λ b λ d  b (b (b (b (b (b (b (b d ))))))))
-        (interpret "(λa.λb.a(a(a b))) (λa.λb.a(a b))")   '(λ b λ b0 b (b (b (b (b (b (b (b b0))))))))))
+                                    (interpret "λx.x")   "λx.x"
+                          (interpret "λb.(λa.λb.a) b")   "λb.λb0.b"
+        (interpret "(λa.λb.a(a(a b))) (λc.λd.c(c d))")   "λb.λd.b (b (b (b (b (b (b (b d)))))))"
+        (interpret "(λa.λb.a(a(a b))) (λa.λb.a(a b))")   "λb.λb0.b (b (b (b (b (b (b (b b0)))))))"))
+
+
+(def repl ()
+  (while t
+    (pr "λ > ")
+    (prn:interpret:readline)))

@@ -254,6 +254,22 @@
   (fn rest-args
     (apply f (+ args rest-args))))
 
+; given  ("(" "λ" "x" "x" ")")
+; return '(λ x x)
+(def abstract-syntax-tree (tokens)
+  (with stack        '()
+        current-list '()
+    (each token tokens
+      (case token
+        "(" (do 
+              (push current-list stack)
+              (= current-list '()))
+        ")" (let parent pop.stack
+              (push rev.current-list parent)
+              (= current-list parent))
+        (push sym.token current-list)))
+    rev.current-list))
+
 ; ; substr
 ; (def split-str (str (o match " "))
 ;   (accum push
