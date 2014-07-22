@@ -98,8 +98,7 @@
 (def expand-λ (λ exp)
   (expand body.λ arg.λ exp))
 
-; turn exp into string
-; put periods between functions
+; turn exp into a pretty exp string
 ; a -> "a"
 ; (λ x x) -> "λx.x"
 ; (λ x x x) -> "λx.x x"
@@ -119,15 +118,17 @@
   (map [apply iso _] (tuples 2 args)))
 
 (def run-tests ()
-  (assert                               (normalize 'a)   'a
-                                (normalize '(λ x . x))   '(λ x . x)
-                                    (interpret "λx.x")   "λx.x"
-                          (interpret "λb.(λa.λb.a) b")   "λb.λb0.b"
-        (interpret "(λa.λb.a(a(a b))) (λc.λd.c(c d))")   "λb.λd.b (b (b (b (b (b (b (b d)))))))"
-        (interpret "(λa.λb.a(a(a b))) (λa.λb.a(a b))")   "λb.λb0.b (b (b (b (b (b (b (b b0)))))))"))
+  (assert                           (normalize 'a)   'a
+                            (normalize '(λ x . x))   '(λ x . x)
+                                (interpret "λx.x")   "λx.x"
+                      (interpret "λb.(λa.λb.a) b")   "λb.λb0.b"
+    (interpret "(λa.λb.a(a(a b))) (λc.λd.c(c d))")   "λb.λd.b (b (b (b (b (b (b (b d)))))))"
+    (interpret "(λa.λb.a(a(a b))) (λa.λb.a(a b))")   "λb.λb0.b (b (b (b (b (b (b (b b0)))))))"))
 
 
 (def repl ()
+  (readline)
+  (prn "The format for inputted expressions is: (λa.λb.a(a(a b))) (λa.λb.a(a b))")
   (while t
     (pr "λ > ")
     (prn:interpret:readline)))
