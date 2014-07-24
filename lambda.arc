@@ -1,7 +1,7 @@
-; endgame: interpret this correctly
+; Endgame: Interpret this correctly
 ; (λab.a(a(a b)))(λab.a(a b))
 
-; (repl)
+; Press (repl) to play
 
 (l "core")
 
@@ -11,7 +11,7 @@
    ellipsize [+ "(" _ ")"]
    interpret prettify-λ:name-map:normalize:static-name-resolve:parse)
 
-; functions look like (λ arg . body)
+; Functions look like '(λ arg . body)
 (def λ? (exp)
   (and cons?.exp (is car.exp 'λ)))
 
@@ -21,9 +21,9 @@
 (def λ-map (f λ)
   (new-λ arg.λ f:body.λ))
 
-; returns tokens in a lisp-like structure
-; given  "(λx.λy.y) (λa.a) (λb.b)"
-; return '((λ x λ y y) (λ a a)) (λ b b))
+; Given a lambda expression in written notation, return tokens in a tree structure.
+; Given  "(λx.λy.y) (λa.a) (λb.b)"
+; Return '((λ x λ y y) (λ a a)) (λ b b))
 (def parse (str)
   (read:ellipsize:multisubst '(("." " ") ("λ" "λ ")) str))
 
@@ -38,8 +38,8 @@
 ; solution: recursive, with unbinds after function calls
 
 ; a -> a | "a"
+; (l r) -> recurse
 ; (λ ...) -> complicated shit
-; (l r) -> go into each and cons
 (def snr (exp (o bound (table)))
   (if atom.exp  (or car:bound.exp string.exp)
       no:λ?.exp (map [snr _ bound] exp)
@@ -57,9 +57,9 @@
   (= names (table))
   snr.exp)
 
-; and now for remapping to names
-; given  '(λ 1 (λ 3  (1 (1 (1 (1 (1 (1 (1 (1 3 ))))))))))
-; return '(λ b (λ b0 (b (b (b (b (b (b (b (b b0))))))))))
+; Given an expression with unique function arguments and a mapping to names, replace all atoms with their corresponding names. Handle collisions by applying a unique number suffix.
+; Given  '(λ 1 (λ 3  (1 (1 (1 (1 (1 (1 (1 (1 3 ))))))))))
+; Return '(λ b (λ b0 (b (b (b (b (b (b (b (b b0))))))))))
 (def name-map (exp (o depth (table)))
   (if atom.exp  names.exp
       no:λ?.exp (map [name-map _ depth] exp)
@@ -73,10 +73,12 @@
           (new-λ names.index (name-map body.exp depth))
           --:depth.var))))
 
-; a -> a
-; (λ var. body) -> (λ var. norm-body)
-; ((λ) r) -> expand λ with r -> normalize
-; (l r) -> (l.norm r) - apply the first element to the second, continue
+; Given an expression, simplify it to its normal form.
+;              1 -> 1
+; (λ var . body) -> (λ var . norm.body)
+;        ((...)) -> (...)
+;        ((λ) r) -> (norm:expand λ r)
+;        (l . r) -> (norm.l . norm.r)
 (def normalize (exp)
   (if atom.exp exp
       λ?.exp   (λ-map normalize exp)
@@ -86,23 +88,15 @@
             λ?.left    (normalize:cons (expand-λ left cadr.exp) cddr.exp)
                        (cons left (map normalize cdr.exp))))))
 
-; instead of deep-map, create a recursive function which travels through an expression replacing things inside the body, but not replacing within a function that has the same var
-; a -> <expanded> || a
-; (λ x body) -> (λ x (expand body))
-; (l r) -> expand both
-(def expand (exp token input)
-  (if atom.exp (if (is exp token) input exp)
-      λ?.exp   (λ-map [expand _ token input] exp)
-               (map [expand _ token input] exp)))
-
+; Given a function and an expression, replace all instances of the function's argument with the expression and unwrap the function.
 (def expand-λ (λ exp)
-  (expand body.λ arg.λ exp))
+  (deep-map [if (is _ arg.λ) exp _] body.λ))
 
-; turn exp into a pretty exp string
-; a -> "a"
-; (λ x x) -> "λx.x"
+; Given an expression, return its written notation as a string.
+;         a -> "a"
+;   (λ x x) -> "λx.x"
 ; (λ x x x) -> "λx.x x"
-; (a b) -> "(a b)"
+;     (a b) -> "(a b)"
 (def prettify-λ (exp)
   (if atom.exp string.exp
       λ?.exp   (string "λ" arg.exp "." (if atom:body.exp body.exp prettify-list:body.exp))
@@ -113,7 +107,7 @@
     prettify-λ.exp
     (sum:intersperse " " (map prettify-λ exp))))
 
-
+; Given a list of expressions, test the equality of each pair.
 (def assert args
   (map [apply iso _] (tuples 2 args)))
 
