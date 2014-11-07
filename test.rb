@@ -47,6 +47,7 @@ def one_off_words(str, word_list)
   end
 end
 
+# Interview Problem Candidate
 # given two intervals described each by two numbers on a number line, find the intersect and the section of each interval with no overlap
 # let a range be [l, r] for [left, right]
 
@@ -65,9 +66,9 @@ def overlap(range1, range2)
   both = [] unless valid?(both)
 
   { 
-    :range1 => [[l1, lmax], [rmin, r1]].select { |range| valid?(range) },
-    :range2 => [[l2, lmax], [rmin, r2]].select { |range| valid?(range) },
-    :both => both
+    range1: [[l1, lmax], [rmin, r1]].select { |range| valid?(range) },
+    range2: [[l2, lmax], [rmin, r2]].select { |range| valid?(range) },
+    both: both
   }
 end
 
@@ -89,6 +90,7 @@ def matrix_fibs(n)
   (Matrix[[0, 1], [1, 1]] ** n)[1, 0]
 end
 
+# Interview Problem Candidate
 def stock_picker2(arr)
   low = arr[0]
   high = low
@@ -183,6 +185,7 @@ class Array
   end
 end
 
+# Interview Problem Candidate
 def binary_step(arr, target, left, right)
   return if left > right
   half = (left + right) / 2
@@ -308,6 +311,22 @@ def hill(v)
 
   (value + 1) / 2
 end
+
+# Challenge 5: Maximum Difference
+# Given an array of integer elements, a subsequence of this array is a set of consecutive elements from the array (i.e: given the array v: [7, 8, -3, 5, -1], a subsequence of v is 8, -3, 5)
+# Your task is to
+# write a function that finds a left and a right subsequence of the array that satisfy the following conditions
+# the two subsequences are unique (they don't have shared elements)
+# the difference between the sum of the elements in the right subsequence and the sum of the elements in the left subsequence is maximum
+# print the difference to the standard output (stdout)
+# Note that your function will receive the following arguments:
+# v
+# which is the array of integers
+# Data constraints
+# the array has at least 2 and at most 1,000,000 numbers
+# all the elements in the array are integer numbers in the following range: [-1000, 1000]
+
+
 
 # given an array and a starting index, return whether or not you can get to a zero by jumping forwards or backwards in the array by the numbers you land on
 
@@ -465,6 +484,7 @@ class DoubleLinkedList
   end
 end
 
+# Interview Problem Candidate
 def move_zeros(arr)
   pointer = 0
 
@@ -477,15 +497,16 @@ def move_zeros(arr)
   end
 end
 
-def index_of(mainstr, substr)
-  for i in 0...mainstr.size - substr.size
+# Interview Problem Candidate
+def index_of(string, substr)
+  for i in 0...string.size - substr.size
     same = true
-    for j in 0...substr.size
-      same = false if mainstr[i + j] != substr[j]
+    substr.size do |j|
+      same = false if string[i + j] != substr[j]
     end
     return i if same
   end
-  -1
+  nil
 end
 
 # time: O(n^2), space: O(n)
@@ -529,6 +550,7 @@ def sierpinski
   end
 end
 
+# Interview Problem Candidate
 def permutations(arr)
   return [[]] if arr.empty?
   results = []
@@ -634,16 +656,425 @@ def parse_lisp(str)
 		  end
 		end
 	end
-  	
-
-  end
 
   puts pre_parse
 end
 
-p parse_lisp(<<-code)
-def prime? (n)
-  and
-    isnt 1 n
-    none [multiple n _] (range 2 sqrt.n)
-code
+# p parse_lisp(<<-code)
+# def prime? (n)
+#   and
+#     isnt 1 n
+#     none [multiple n _] (range 2 sqrt.n)
+# code
+
+# def read (tokens)
+#   stack = []
+#   current_list = []
+#   tokens.each do |token|
+#     case token
+#     when "("
+#       stack.push(current_list)
+#       current_list = []
+#     when ")" 
+#       parent = stack.pop
+#       parent.push(current_list)
+#       current_list = parent
+#     else
+#       current_list.push(sym.token)
+#     end
+#     rev.current_list
+#   end
+# end
+
+
+# def think (states memory)
+#   (mat-trans:list:mat-mul memory mat-trans:list.states))
+# end
+
+# # for each piece of memory, multiply by a bias based on the state in question and the utility to obtain the new state
+# def update (memory states utility)
+
+# end
+
+# def stress_test(n)
+#   think(mat(n) mat(n, n))
+# end
+
+class Node
+  attr_accessor :level, :nw, :ne, :sw, :se
+  def initialize(nw, ne, sw, se, level = nil)
+    @nw, @ne, @sw, @se = nw, ne, sw, se
+    @level = level || nw.level + 1
+  end
+
+  def centered_subnode
+    Node.new(nw.se,
+             ne.sw,
+             sw.ne,
+             se.nw)
+  end
+
+  def centered_horizontal(west, east)
+    Node.new(west.ne.se,
+             east.nw.sw,
+             west.se.ne,
+             east.sw.nw) 
+  end
+
+  def centered_vertical(north, south)
+    Node.new(north.sw.se,
+             north.se.sw,
+             south.nw.ne,
+             south.ne.nw)
+  end
+
+  def centered_sub_subnode
+    Node.new(nw.se.se,
+             ne.sw.sw,
+             sw.ne.ne,
+             se.nw.nw)
+  end
+
+  def next_generation
+    if level == 2
+      # ... do base case through normal simulation ...
+    else
+      n00 = nw.centered_subnode
+      n01 = centered_horizontal(nw, ne)
+      n02 = ne.centered_subnode
+      n10 = centered_vertical(nw, sw)
+      n11 = centered_sub_subnode
+      n12 = centered_vertical(ne, se)
+      n20 = sw.centered_subnode
+      n21 = centered_horizontal(sw, se)
+      n22 = se.centered_subnode
+      Node.new(Node.new(n00, n01, n10, n11).next_generation,
+               Node.new(n01, n02, n11, n12).next_generation,
+               Node.new(n10, n11, n20, n21).next_generation,
+               Node.new(n11, n12, n21, n22).next_generation)
+    end
+  end
+
+  def horizontal_forward(west, east)
+    Node.new(west.ne,
+             east.nw,
+             west.se,
+             east.sw).next_generation
+  end
+
+  def vertical_forward(north, south)
+    Node.new(north.sw,
+             north.se,
+             south.nw,
+             south.ne).next_generation
+  end
+
+  def centered_forward
+    Node.new(nw.se,
+             ne.sw,
+             sw.ne,
+             se.nw).next_generation
+  end
+
+  def next_generation
+    if (level == 2)
+      # ... do base case through normal simulation ...
+    else
+      n00 = nw.next_generation
+      n01 = horizontal_forward(nw, ne)
+      n02 = ne.next_generation
+      n10 = vertical_forward(nw, sw)
+      n11 = centered_forward
+      n12 = vertical_forward(ne, se)
+      n20 = sw.next_generation
+      n21 = horizontal_forward(sw, se)
+      n22 = se.next_generation
+      Node.new(Node.new(n00, n01, n10, n11).next_generation,
+               Node.new(n01, n02, n11, n12).next_generation,
+               Node.new(n10, n11, n20, n21).next_generation,
+               Node.new(n11, n12, n21, n22).next_generation)
+    end
+  end
+end
+
+
+def largest_product(grid)
+  max = 0
+
+  [[0, 1], [1, 1], [1, 0], [1, -1]].each do |dir|
+    x, y = dir
+    grid.each_with_index do |row, i|
+      row.each_index do |j|
+        product = 1
+        4.times { |d| product *= get_multiplier(grid, i + d * x, j + d * y) }
+        max = product if product > max
+      end
+    end
+  end
+
+  max
+end
+
+def get_multiplier(grid, i, j)
+  (i < 0 || j < 0 || i >= grid.size || j >= grid[0].size) ? 1 : grid[i][j]
+end
+
+# triangle.each_with_index do |row, i|
+#   row.each_with_index do |num, j|
+#     tails = []
+#     tails << triangle[i - 1][j - 1] if i > 0 && j > 0
+#     tails << triangle[i - 1][j    ] if i > 0 && j < i
+#     num += tails.max if tails.max
+#     triangle[i][j] = num
+#   end
+# end
+
+# puts triangle.last.max
+
+# triangle = []
+
+# 100.times do |i|
+#   triangle[i] = []
+
+#   (i + 1).times do |j|
+#     triangle[i][j] = j == 0 || j == i ? 1 : triangle[i - 1][j - 1] + triangle[i - 1][j]
+#   end
+# end
+
+# p triangle
+
+# Project Euler Problem 81
+# Find the minimum sum of a path going from the top left corner to the bottom right of a matrix.
+#
+# def minimum_path_sum(matrix)
+#   matrix.each_with_index do |row, i|
+#     row.each_index do |j|
+#       tails = []
+#       tails << matrix[i - 1][j] if i > 0
+#       tails << matrix[i][j - 1] if j > 0
+
+#       matrix[i][j] += tails.min if tails.min
+#     end
+#   end
+# end
+
+# minimum_path_sum(matrix)
+# puts matrix.last.last
+
+# factorial golf
+  # f=lambda{|n|n<1?1:n*f[n-1]}
+  # def f(n)n<1?1:n*f(n-1)end
+  # f=->n{n<1?1:n*f[n-1]}
+
+  # (= f[if(< _ 1)1(* _ f:1-._)])
+  # product:range
+  # (mac ? args `(if ,@args))
+  # (= 0? zero)
+  # (= f[? 0?._ 1(* _ f:1-._)])
+
+# note: If the markov chain is not generated in such a way that it loops, generating new words once you reach the last word may fail.
+def markov_chain(str, depth)
+  chain = Hash.new { |hash, key| hash[key] = [] }
+  parsed_text = str.split
+  for pattern_length in 1 .. depth
+    (parsed_text.size - pattern_length).times do |i|
+      chain[parsed_text[i ... i + pattern_length]] << parsed_text[i + pattern_length]
+    end
+  end
+  chain
+end
+
+def generate_markov_string(markov_chain, depth, size)
+  words = markov_chain.keys.sample
+  all_words = markov_chain.values.flatten
+  until words.size >= size
+    possible_words = (1..depth).map{ |i| markov_chain[words.last(i)] }.flatten
+    words << (possible_words.empty? ? all_words.sample : possible_words.sample)
+  end
+  words.join(' ')
+end
+
+def markov_string(str, size)
+  generate_markov_string(markov_chain(str, 3), 3, size)
+end
+
+# ont_text = "seems like a lot of them wind up just being first and last half of a message being switched."
+
+# puts markov_string(ont_text, 50)
+
+
+# games = 
+
+class Card
+  values = [2,3,4,5,6,7,8,9,:T,:J,:Q,:K,:A].map(&:to_s)
+  @@tiers = {}
+  values.each_with_index{ |el, i| @@tiers[el] = i }
+
+  attr_reader :value, :suite
+  def initialize(str)
+    @value = str[0]
+    @suite = str[1]
+  end
+
+  def tier
+    @@tiers[@value]
+  end
+end
+
+class Array
+  def histogram
+    Hash[*self.group_by{ |v| v }.flat_map{ |k, v| [k, v.size] }]
+  end
+
+  def sum
+    self.inject(&:+)
+  end
+end
+
+def values(hand)
+  hand.map(&:value)
+end
+
+def duplicate_value_count(hand)
+  values(hand).histogram.select{ |value, count| count > 1 }.size
+end
+
+def uniq_value_count(hand)
+  values(hand).uniq.size
+end
+
+def hand_tier(hand)
+  unique          = -> hand { uniq_value_count(hand) == 5 }
+  pair            = -> hand { uniq_value_count(hand) == 4 }
+  two_pair        = -> hand { uniq_value_count(hand) == 3 && duplicate_value_count(hand) == 2 }
+  three_of_a_kind = -> hand { uniq_value_count(hand) == 3 && duplicate_value_count(hand) == 1 }
+  straight        = -> hand { 
+    tiers = hand.map(&:tier)
+    unique[hand] && (tiers.sum - tiers.min * 5 == 10)
+  }
+  flush           = -> hand { hand.map(&:suite).uniq.size == 1 }
+  full_house      = -> hand { uniq_value_count(hand) == 2 && duplicate_value_count(hand) == 2 }
+  four_of_a_kind  = -> hand { uniq_value_count(hand) == 2 && duplicate_value_count(hand) == 1 }
+  straight_flush  = -> hand { straight[hand] && flush[hand] }
+
+  qualifications = [straight_flush, four_of_a_kind, full_house, flush, straight, three_of_a_kind, two_pair, pair, unique]
+  qualifications.size - qualifications.index{ |qualification| qualification[hand] }
+end
+
+def pair_encode(hand)
+  run_length_values = hand.map(&:tier).histogram.map(&:reverse).sort.reverse.map(&:last)
+end
+
+def player_1_wins(hand1, hand2)
+  if hand_tier(hand1) != hand_tier(hand2)
+    hand_tier(hand1) > hand_tier(hand2)
+  else
+    (pair_encode(hand1) <=> pair_encode(hand2)) == 1
+  end
+end
+
+def hand(cards)
+  cards.split.map{ |str| Card.new(str) }
+end
+
+# puts games.map{ |hands|
+#   hand1, hand2 = hands
+#   player_1_wins(hand(hand1), hand(hand2)) ? 1 : 0
+# }.sum
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# a.edges = [b, d]
+# b.edges = [a, c, e]
+# ...
+
+# ASSUMED GRAPH FORMAT
+# each node has some edges and a value
+# the edges are pointers to other nodes, AKA just nodes
+# node[:edges]
+# node[:value]
+
+# graph is assumed to be connected
+class Node
+  attr_accessor :value, :children, :distance, :parent
+  def initialize(value, children = [])
+    @value = value
+    @children = children
+  end
+end
+
+def slow_dijkstras(start, finish)
+  visited = {}
+  start.distance = start.value
+  visited_nodes = [start]
+  current_node = nil
+
+  until visited_nodes.index(finish)
+    candidate_paths = visited_nodes.map do |node| 
+      node.children
+          .select{ |node| !visited[node] }
+          .map{ |new_node|
+            { node: new_node, distance: new_node.value + node.distance }
+          }
+    end
+
+    new_path = candidate_paths.flatten.min_by{ |path| path[:distance] }
+
+    current_node = new_path[:node]
+    current_node.distance = new_path[:distance]
+
+    visited_nodes << current_node
+    visited[current_node] = true
+  end
+
+  finish.distance
+end
+
+# matrix = [[131,673,234,103,18],[201,96,342,965,150],[630,803,746,422,111],[537,699,497,121,956],[805,732,524,37,331]]
+
+def construct_graph(matrix)
+  # a node for every index, and an edge for every direction! (except left)
+  new_matrix = matrix.map do |row|
+    row.map{ |value| Node.new(value) }
+  end
+
+  new_matrix.each_with_index do |row, x|
+    row.each_with_index do |node, y|
+      # complicated children adding logic
+      [[-1, 0],[0, 1], [1, 0], [0, -1]].each do |direction| # [0, -1] would be left
+        dx, dy = direction
+        new_x, new_y = x + dx, y + dy
+        if (0...new_matrix.size).member?(new_x) && (0...row.size).member?(new_y)
+          node.children << new_matrix[new_x][new_y]
+        end
+      end
+    end
+  end
+
+  # construct start and finish nodes via children to / from the first / last elements of each row
+  # start = Node.new(0, new_matrix.map(&:first))
+  # last = Node.new(0)
+  # new_matrix.map(&:last).each{ |node| node.children << last }
+
+  [new_matrix.first.first, new_matrix.last.last]
+end
+
+# start, finish = construct_rightwards_graph(matrix)
+# puts slow_dijkstras(start, finish)
+

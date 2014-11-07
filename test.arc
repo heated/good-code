@@ -1,23 +1,32 @@
 (l "core")
+(l "sets")
 
-(= triangle sum:range)
-
-; now with efficiency
-(= triangle [* _ inc._ 1/2])
-
-(= factorial product:range)
-
-(= generate-some [generate 20 _])
-
-(def worstn-int (n f xs)
-  (bestn n [< f._a f._b] xs))
-
-(= prime-factors [keep prime? factors._])
+(= triangle      sum:range
+   ; now with efficiency
+   triangle      [* _ inc._ 1/2]
+   factorial     memo.product:range
+   generate-some [generate 20 _]
+   prime-factors [keep prime? factors._]
+   digits        num->digs
+   alph-pos      [- int._ 64]
+   pentagonal    [* _ (dec:* 3 _) 1/2]
+   hexagonal     [* _ (dec:* 2 _)]
+   magnitude     floor:log
+   ascending     [sort < _]
+   descending    [sort > _]
+   prime?        prime
+   /2            [/ _ 2]
+   div2          [div _ 2]
+   negative      [< _ 0])
 
 (def fibs (n)
-  (let arr '(1 1)
-    (repeat n (push (+ arr.0 arr.1) arr))
-    (take n rev.arr)))
+  (with a 1 b 1
+    (accum add
+      (repeat n
+        add.a
+        (let temp b
+          (= b (mod (+ b a) (expt 10 9)))
+          (= a temp))))))
 
 (def one-off-words (word list)
   (keep [is 1 
@@ -28,21 +37,20 @@
 
 (def unique (xs)
   (with seen (table)
-        result nil
-    (on el xs
-      (unless seen.el (push el result))
-      set:seen.el)
-    rev.result))
+    (accum add
+      (on el xs
+        (unless seen.el add.el)
+        set:seen.el))))
 
 ; given two intervals described each by two numbers on a number line, find the intersect and the section of each interval with no overlap
 ; let a range be [l, r] for [left, right] 
 (= valid-range? [< _.0 _.1])
 
 (def overlap ((l1 r1) (l2 r2))
-  (withs (lmax      (max l1 l2)
-          rmin      (min r1 r2)
-          both      (list lmax rmin)
-          intersect (and valid-range?.both both))
+  (withs lmax      (max l1 l2)
+         rmin      (min r1 r2)
+         both      (list lmax rmin)
+         intersect (and valid-range?.both both)
     
     (obj range1 (keep valid-range? (sub ((l1 lmax) (rmin r1))))
          range2 (keep valid-range? (sub ((l2 lmax) (rmin r2))))
@@ -68,10 +76,10 @@
         (push index seen.el)))))
 
 (def powerset ((x . xs))
-  (if x
+  (if empty.x
+    '(())
     (let set powerset.xs
-      (+ set (map [cons x _] set)))
-    '(())))
+      (+ set (map [cons x _] set)))))
 
 (def permutations (xs)
   (if empty.xs
@@ -93,18 +101,19 @@
     (zap bubble xs))
   xs)
 
-(def merge (l1 l2)
-  (+ (accum add
-       (while (and l1 l2)
-         (add:if (< l1.0 l2.0) pop.l1 pop.l2)))
-     l1 l2))
-
-(def merge-sort (xs)
-  (let half (div len.xs 2)
-    (if zero.half 
-      xs
-      (merge (merge-sort:take half xs)
-             (merge-sort:drop half xs)))))
+; collision with built in sort function
+; (def merge (l1 l2)
+;   (+ (accum add
+;        (while (and l1 l2)
+;          (add:if (< l1.0 l2.0) pop.l1 pop.l2)))
+;      l1 l2))
+;
+; (def merge-sort (xs)
+;   (let half (div len.xs 2)
+;     (if zero.half 
+;       xs
+;       (merge (merge-sort:take half xs)
+;              (merge-sort:drop half xs)))))
 
 (def substr (str sub)
   (catch:for i 0 (- len.str len.sub)
@@ -140,9 +149,11 @@
       (take half xs) 
       (rev:drop (- len.xs half) xs))))
 
+(def worstn-int (n f xs)
+  (bestn n [< f._a f._b] xs))
+
 (def closest (n str dictionary)
-  (worstn-int 
-    n
+  (worstn-int n
     [diff-words str _] 
     dictionary))
 
@@ -191,7 +202,7 @@
       (some [subset-difference xs (+ n _)]
         (list 0 x -.x))))
 
-(def sicp-1-3 xs (- (sum:map sqr xs) (sqr:best < xs)))
+(def sicp-1-3 xs (- (sum:map sqr xs) sqr:minimum.xs))
 
 (def memoize (f)
   (let hash (table)
@@ -221,11 +232,10 @@
   (scdr last-pair.xs xs)
   t)
 
-(defmemo ack (a b)
-  (if (< a 2)  (+ a b 1)
-      (is a 2) (+ (* b 2) 3)
-      zero.b   (ack dec.a 1)
-      (ack dec.a (ack a dec.b))))
+(defmemo ackerman (a b)
+  (if zero.a          inc.b
+      zero.b          (ackerman dec.a 1)
+      (ackerman dec.a (ackerman a dec.b))))
 
 (def levenshtein (str1 str2)
   (withs l1  len.str1
@@ -346,3 +356,8 @@
 ;
 ; (mac foo args
 ;   `(with ,@args ))
+
+; LEL
+; (def expt2 (n) (if zero.n 2 (sum:map expt2 range0.n)))
+
+

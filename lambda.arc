@@ -5,11 +5,9 @@
 
 (l "core")
 
-(= arg       cadr
-   body      cddr
-   names     (table)
-   ellipsize [+ "(" _ ")"]
-   interpret prettify-λ:name-map:normalize:static-name-resolve:parse)
+(= arg   cadr
+   body  cddr
+   names (table))
 
 ; Functions look like '(λ arg . body)
 (def λ? (exp)
@@ -49,8 +47,7 @@
         (= names.index var)
         (push index bound.var)
 
-        (before-returning 
-          (new-λ index (snr body.exp bound))
+        (do1 (new-λ index (snr body.exp bound))
           pop:bound.var))))
 
 (def static-name-resolve (exp)
@@ -69,8 +66,7 @@
         (= names.index (symb var depth.var))
         (or= depth.var -1)
         ++:depth.var
-        (before-returning 
-          (new-λ names.index (name-map body.exp depth))
+        (do1 (new-λ names.index (name-map body.exp depth))
           --:depth.var))))
 
 ; Given an expression, simplify it to its normal form.
@@ -119,6 +115,7 @@
     (interpret "(λa.λb.a(a(a b))) (λc.λd.c(c d))")   "λb.λd.b (b (b (b (b (b (b (b d)))))))"
     (interpret "(λa.λb.a(a(a b))) (λa.λb.a(a b))")   "λb.λb0.b (b (b (b (b (b (b (b b0)))))))"))
 
+(= interpret prettify-λ:name-map:normalize:static-name-resolve:parse)
 
 (def repl ()
   (readline)

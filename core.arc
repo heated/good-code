@@ -1,30 +1,25 @@
-(= none no:some)
+(= none no:some
+   sum     [reduce + _]
+   product [reduce * _]
+   range0  [range 0 dec._]
+   not-nil [keep id _]
+   ignore  [do _ t]
+   to-list [as cons _] 
+   to-vec  [as vec _]
+   xlen    len
+   ylen    len:car
+   ^       expt
+   values  [map _ keys._]
 
-(= sum [reduce + _])
-
-(= product [reduce * _])
-
-(= range0 [range 0 dec._])
-
-(= not-nil [keep id _])
+   same-count [count id (map is _a _b)]
+   n-of-vec   to-vec:n-of
+   iterable?  [in type._ 'vec 'cons]
+   ellipsize  [+ "(" _ ")"]
+   decimal    [- _ floor._]
+   maximum    [best > _]
+   minimum    [best < _])
 
 (def generate (n f) (map f range.n))
-
-(= same-count [count id (map is _a _b)])
-
-(= ignore [do _ t])
-
-(= to-list [as cons _]) 
-
-(= to-vec [as vec _])
-
-(= n-of-vec to-vec:n-of)
-
-(= xlen len)
-
-(= ylen [len _.0])
-
-(= iterable? [in type._ 'vec 'cons])
 
 (mac next (xs) `(zap cdr ,xs))
 
@@ -33,6 +28,9 @@
 
 (mac or= (exp val)
   `(or ,exp (= ,exp ,val)))
+
+(mac toggle (exp)
+  `(= ,exp (no ,exp)))
 
 (def prime? (n)
   (and (isnt n 1) (none [multiple n _] (range 2 sqrt.n))))
@@ -47,11 +45,6 @@
   (if cons?.exp
     `(cons (sub ,car.exp) (sub ,cdr.exp)) 
     exp))
-
-(mac before-returning (x . xs)
-  `(let return-value ,x
-     ,@xs
-     return-value))
 
 (def map-i (f xs (o n 0))
   (if xs 
@@ -159,7 +152,6 @@
 (mac each-index (xs . body)
   (let body wrap-tokens.body
     `(each-idces ,xs ,@body)))
-
 
 ; union the keys and use that to index the tables for arguments to apply to a function
 ; (def map-unioned-values (f tables)
