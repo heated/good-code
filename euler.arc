@@ -894,3 +894,6 @@
 ;        (push to-list.arr solutions)))
 
 ; (each-permutation to-vec:range.10 test-5-gon)
+
+; 529
+; (sum [/ (dec:expt 2.0 dec._) _] range.30)
