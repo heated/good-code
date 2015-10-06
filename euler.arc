@@ -892,10 +892,28 @@
 ;        (all [< arr.0 arr._] range.4)
 ;        (apply is (map [+ arr._ (arr:+ _ 5) (arr:+ (mod inc._ 5) 5)] range0.5))
 ;        (push to-list.arr solutions)))
-
+;
 ; (each-permutation to-vec:range.10 test-5-gon)
 
 ; 529
 ; (sum [/ (dec:expt 2.0 dec._) _] range.30)
 
 ; 329
+; (= sequence '(t t t t nil nil t t t nil t t nil t nil))
+;
+; (defmemo prime-frog (start seq)
+;   (let (expected . remaining) seq
+;     (if no.seq 1
+;         (* 
+;           1/3
+;           (if (is expected prime.start) 2 1)
+;           (case start
+;             1   (prime-frog inc.start remaining)
+;             500 (prime-frog dec.start remaining)
+;                 (/ (+ (prime-frog inc.start remaining)
+;                       (prime-frog dec.start remaining))
+;                    2))))))
+;
+; (/ (sumn [prime-frog _ sequence] 1 500) 500)
+
+
