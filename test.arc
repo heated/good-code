@@ -360,4 +360,14 @@
 ; LEL
 ; (def expt2 (n) (if zero.n 2 (sum:map expt2 range0.n)))
 
+; (n log n) factors of every number under max
+(def mapn0-factor (max)
+  (let factor (to-vec:n-of max '())
+    (for n 1 dec.max
+      (for i 1 (ceiling:dec:/ max n)
+        (push n (factor:* n i))))
+    (times n max
+      (= factor.n rev:factor.n))
+    factor))
+
 

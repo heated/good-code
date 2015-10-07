@@ -916,4 +916,29 @@
 ;
 ; (/ (sumn [prime-frog _ sequence] 1 500) 500)
 
+; 491
+; ((number of double pandigital numbers) - (the ones that have leading 0s)) / 11 ?
+; (/ factorial.20 1024 10/9 11)
+; (~2e14) 194390252784000 -> wrong
+; still, this should be relatively close to the answer
+;
+; actually, i think i can just memoize this
+; find total number of 11s you can make
+; recurse with total and numbers left
+(def remove-one (el xs)
+  (if no.xs nil
+      (is el xs.0) cdr.xs
+      (cons xs.0 (remove-one el cdr.xs))))
 
+; (defmemo double-pandigital (modulus remaining depth)
+;   (if no.remaining
+;     (if zero.modulus 1 0)
+;     (sum:map 
+;       [double-pandigital
+;         (mod ((if odd.depth + -) modulus _) 11)
+;         (remove-one _ remaining)
+;         inc.depth]
+;       ((if zero.depth cdr id) unique.remaining))))
+;
+; takes 30 seconds
+; (double-pandigital 0 (ascending:+ range0.10 range0.10) 0)

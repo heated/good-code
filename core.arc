@@ -12,7 +12,6 @@
    values  [map _ keys._]
 
    same-count [count id (map is _a _b)]
-   n-of-vec   to-vec:n-of
    iterable?  [in type._ 'vec 'cons]
    ellipsize  [+ "(" _ ")"]
    decimal    [- _ floor._]
