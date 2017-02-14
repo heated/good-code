@@ -21,3 +21,6 @@
 
 (= blinker '((1 2) (2 2) (3 2)))
 (= glider '((1 0) (2 1) (0 2) (1 2) (2 2)))
+
+; golfed - 193 chars
+; (l "sets")(def c(s i)(zap to-set s)(repeat i prn:ppr:keys.s(= s(table-map-to-values[case _b 3 t 2 s._a](counts:mappend(fn(d)(map[map + _ d]keys.s))(remove'(0 0)(flat1:mapn list -1 1 -1 1)))))))
